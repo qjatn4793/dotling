@@ -143,7 +143,20 @@ hf_hub_download('artificialguybr/PixelArtRedmond',
 "
 ```
 
-### 3. 실행
+### 3. 환경변수 (선택)
+
+기본값으로 동작하므로 설정하지 않아도 된다.
+원격 ComfyUI를 쓰거나 포트를 바꾼 경우에만 `.env.local`을 만든다.
+
+```bash
+cp .env.example .env.local
+```
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `COMFYUI_URL` | `http://localhost:8188` | 텍스트 → 픽셀아트 생성에 사용하는 ComfyUI API 주소 |
+
+### 4. 실행
 
 ```bash
 cd dotling
