@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const RESOLUTIONS = [
   { label: "16×16", value: 16 },
@@ -23,6 +23,9 @@ export default function Home() {
   const [resolution, setResolution] = useState(32);
   const [palette, setPalette] = useState("16");
   const [removeBg, setRemoveBg] = useState(false);
+  const [sourceKind, setSourceKind] = useState<"image" | "pixel">("image");
+  const [resultSize, setResultSize] = useState(32);
+  const [notice, setNotice] = useState("");
   const [prompt, setPrompt] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -32,9 +35,13 @@ export default function Home() {
   const fileRef = useRef<HTMLInputElement>(null);
   const fileDataRef = useRef<File | null>(null);
 
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  useEffect(() => () => { if (result) URL.revokeObjectURL(result); }, [result]);
+
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(false);
+    if (loading) return;
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) loadFile(file);
   }
@@ -51,55 +58,46 @@ export default function Home() {
     setError(null);
   }
 
-  async function handleConvert() {
-    if (!fileDataRef.current) return;
+  async function handleRequest() {
+    if (mode === "image" ? !fileDataRef.current : !prompt.trim()) return;
     setLoading(true);
     setError(null);
+    setNotice("");
     setResult(null);
-
-    const formData = new FormData();
-    formData.append("image", fileDataRef.current);
-    formData.append("resolution", String(resolution));
-    formData.append("palette", palette);
-    formData.append("removeBg", String(removeBg));
-
-    const res = await fetch("/api/convert", { method: "POST", body: formData });
-    if (!res.ok) {
-      const { error } = await res.json();
-      setError(error ?? "변환 실패");
+    const requestedSize = resolution;
+    try {
+      const formData = new FormData();
+      if (fileDataRef.current) formData.append("image", fileDataRef.current);
+      formData.append("resolution", String(resolution));
+      formData.append("palette", palette);
+      formData.append("removeBg", String(removeBg));
+      formData.append("sourceKind", sourceKind);
+      const res = await fetch(mode === "image" ? "/api/convert" : "/api/generate", {
+        method: "POST",
+        ...(mode === "text" ? { headers: { "Content-Type": "application/json" } } : {}),
+        body: mode === "image" ? formData : JSON.stringify({ prompt, resolution, palette, removeBg }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "처리에 실패했습니다");
+      }
+      setResult(URL.createObjectURL(await res.blob()));
+      setResultSize(requestedSize);
+      const messages = [];
+      if (res.headers.get("X-Dotling-Boundary") === "true") messages.push("그림이 캔버스 경계에 닿아 있습니다. 잘린 부분이 없는지 확인해주세요.");
+      setNotice(messages.join(" "));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "네트워크 연결을 확인해주세요");
+    } finally {
       setLoading(false);
-      return;
     }
-    setResult(URL.createObjectURL(await res.blob()));
-    setLoading(false);
-  }
-
-  async function handleGenerate() {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, resolution, palette, removeBg }),
-    });
-    if (!res.ok) {
-      const { error } = await res.json();
-      setError(error ?? "생성 실패");
-      setLoading(false);
-      return;
-    }
-    setResult(URL.createObjectURL(await res.blob()));
-    setLoading(false);
   }
 
   function handleDownload() {
     if (!result) return;
     const a = document.createElement("a");
     a.href = result;
-    a.download = `dotling-${resolution}x${resolution}.png`;
+    a.download = `dotling-${resultSize}x${resultSize}.png`;
     a.click();
   }
 
@@ -116,6 +114,7 @@ export default function Home() {
         {(["image", "text"] as Mode[]).map((m) => (
           <button
             key={m}
+            disabled={loading}
             onClick={() => { setMode(m); setResult(null); setError(null); }}
             className={`px-6 py-2 text-sm font-bold tracking-widest transition-colors ${
               mode === m ? "bg-[#f0f0f0] text-[#0f0f0f]" : "text-[#888] hover:text-[#f0f0f0]"
@@ -184,6 +183,15 @@ export default function Home() {
         </div>
       </div>
 
+      {mode === "image" && (
+        <label className="text-sm text-[#aaa] flex gap-3 items-center">
+          입력 이미지 유형
+          <select value={sourceKind} onChange={(e) => setSourceKind(e.target.value as "image" | "pixel")} className="bg-[#1a1a1a] border border-[#444] p-2">
+            <option value="image">사진 / 일러스트</option>
+            <option value="pixel">기존 픽셀아트</option>
+          </select>
+        </label>
+      )}
       {/* Input area */}
       <div className="w-full max-w-2xl flex flex-col gap-4">
         {mode === "image" ? (
@@ -191,7 +199,7 @@ export default function Home() {
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            onClick={() => fileRef.current?.click()}
+            onClick={() => { if (!loading) fileRef.current?.click(); }}
             className={`border-2 border-dashed h-48 flex flex-col items-center justify-center cursor-pointer transition-colors ${
               isDragging
                 ? "border-[#f0f0f0] bg-[#1a1a1a]"
@@ -220,7 +228,7 @@ export default function Home() {
         )}
 
         <button
-          onClick={mode === "image" ? handleConvert : handleGenerate}
+          onClick={handleRequest}
           disabled={loading || (mode === "image" ? !preview : !prompt.trim())}
           className="w-full py-3 font-bold tracking-widest text-sm transition-colors bg-[#f0f0f0] text-[#0f0f0f] hover:bg-[#ccc] disabled:opacity-30 disabled:cursor-not-allowed"
         >
@@ -241,7 +249,7 @@ export default function Home() {
       {result && (
         <div className="flex flex-col items-center gap-4">
           <span className="text-xs text-[#666] tracking-widest">RESULT</span>
-          <div className="border border-[#333] p-2 bg-[#1a1a1a]">
+          <div className="border border-[#333] p-2" style={{ backgroundColor: "#555", backgroundImage: "conic-gradient(#333 25%, transparent 0 50%, #333 0 75%, transparent 0)", backgroundSize: "16px 16px" }}>
             <img
               src={result}
               alt="pixel art result"
@@ -249,6 +257,8 @@ export default function Home() {
               style={{ imageRendering: "pixelated" }}
             />
           </div>
+          <p className="text-xs text-[#aaa]">원본 {resultSize}×{resultSize}px · 미리보기 확대 표시</p>
+          {notice && <p className="max-w-xl text-sm text-amber-300">{notice}</p>}
           <button
             onClick={handleDownload}
             className="px-8 py-2 border border-[#f0f0f0] text-sm tracking-widest hover:bg-[#f0f0f0] hover:text-[#0f0f0f] transition-colors"

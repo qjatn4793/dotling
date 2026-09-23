@@ -1,79 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
-import { getPaletteColors, paletteColorCount, nearestColor } from "@/lib/palettes";
-import { removeBgAndFlatten } from "@/lib/removeBg";
+import { pixelate, validatePixelOptions, type PixelOptions } from "@/lib/image/pixelate";
+import { removeBg } from "@/lib/removeBg";
 
-const UPSCALE = 8;
-
-async function pixelate(buffer: Buffer, resolution: number, palette: string): Promise<Buffer> {
-  const fixedPalette = getPaletteColors(palette);
-  const colorCount = paletteColorCount(palette);
-
-  const small = await sharp(buffer)
-    .resize(resolution, resolution, { fit: "cover", kernel: "lanczos3" })
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-
-  const { data, info } = small;
-  const { width, height, channels } = info;
-
-  let pixelData: Buffer;
-
-  if (fixedPalette) {
-    const out = Buffer.alloc(width * height * 3);
-    for (let i = 0; i < width * height; i++) {
-      const r = data[i * channels];
-      const g = data[i * channels + 1];
-      const b = data[i * channels + 2];
-      const [nr, ng, nb] = nearestColor(r, g, b, fixedPalette);
-      out[i * 3] = nr;
-      out[i * 3 + 1] = ng;
-      out[i * 3 + 2] = nb;
-    }
-    pixelData = out;
-  } else {
-    const quantized = await sharp(buffer)
-      .resize(resolution, resolution, { fit: "cover", kernel: "lanczos3" })
-      .png({ colours: colorCount, dither: 1.0 })
-      .toBuffer();
-
-    const rawQ = await sharp(quantized).raw().toBuffer({ resolveWithObject: true });
-    const qCh = rawQ.info.channels;
-    const out = Buffer.alloc(width * height * 3);
-    for (let i = 0; i < width * height; i++) {
-      out[i * 3] = rawQ.data[i * qCh];
-      out[i * 3 + 1] = rawQ.data[i * qCh + 1];
-      out[i * 3 + 2] = rawQ.data[i * qCh + 2];
-    }
-    pixelData = out;
-  }
-
-  return sharp(pixelData, { raw: { width, height, channels: 3 } })
-    .resize(width * UPSCALE, height * UPSCALE, { kernel: "nearest" })
-    .png()
-    .toBuffer();
-}
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const file = formData.get("image") as File | null;
-  const resolution = parseInt(formData.get("resolution") as string, 10) || 32;
-  const palette = (formData.get("palette") as string) || "16";
-  const removeBg = formData.get("removeBg") === "true";
-
-  if (!file) {
+  let formData: FormData;
+  try { formData = await req.formData(); } catch {
+    return NextResponse.json({ error: "올바른 업로드 형식이 아닙니다" }, { status: 400 });
+  }
+  const file = formData.get("image");
+  if (!(file instanceof File)) {
     return NextResponse.json({ error: "이미지가 없습니다" }, { status: 400 });
   }
-
-  let buffer = Buffer.from(await file.arrayBuffer());
-
-  if (removeBg) {
-    buffer = Buffer.from(await removeBgAndFlatten(buffer));
+  if (file.size > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: "이미지는 10MB 이하여야 합니다" }, { status: 413 });
   }
-
-  const result = await pixelate(buffer, resolution, palette);
-
-  return new NextResponse(new Uint8Array(result), {
-    headers: { "Content-Type": "image/png" },
-  });
+  const options: PixelOptions = {
+    resolution: Number(formData.get("resolution") ?? 32),
+    palette: String(formData.get("palette") ?? "16"),
+    sourceKind: String(formData.get("sourceKind") ?? "image") as PixelOptions["sourceKind"],
+  };
+  try { validatePixelOptions(options); } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 400 });
+  }
+  let buffer = Buffer.from(await file.arrayBuffer());
+  try {
+    const metadata = await sharp(buffer, { limitInputPixels: 16_777_216 }).metadata();
+    if (!["png", "jpeg", "webp"].includes(metadata.format ?? "") || (metadata.pages ?? 1) > 1) {
+      return NextResponse.json({ error: "정적 PNG, JPG, WEBP 이미지만 지원합니다" }, { status: 415 });
+    }
+  } catch {
+    return NextResponse.json({ error: "이미지를 읽을 수 없거나 허용 크기를 초과했습니다" }, { status: 400 });
+  }
+  try {
+    if (formData.get("removeBg") === "true") buffer = Buffer.from(await removeBg(buffer));
+    const { png, quality } = await pixelate(buffer, options);
+    return new NextResponse(new Uint8Array(png), {
+      headers: { "Content-Type": "image/png", "X-Dotling-Boundary": String(quality.touchesBoundary) },
+    });
+  } catch {
+    return NextResponse.json({ error: "이미지 처리에 실패했습니다. 다시 시도해주세요" }, { status: 500 });
+  }
 }

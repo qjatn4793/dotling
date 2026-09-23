@@ -6,7 +6,8 @@
     "dev": "bash scripts/dev.sh",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsc -p tsconfig.test.json && node --test .test-build/tests/image/*.test.js tests/workflows/*.test.mjs"
   },
   "dependencies": {
     "@imgly/background-removal-node": "^1.4.5",

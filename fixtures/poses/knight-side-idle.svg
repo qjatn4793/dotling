@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="768" viewBox="0 0 128 128">
+  <!-- Original geometric pose guide, facing right. Not an AI output or production sprite. -->
+  <rect width="128" height="128" fill="#fff"/>
+  <g stroke="#243047" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Rear leg and boot, offset behind the near leg. Both toes face right. -->
+    <path d="M55 77 L64 78 L61 98 L60 106 L71 108 L71 112 L52 112 L52 105 Z" fill="#634631"/>
+    <!-- Cape stays behind the torso. -->
+    <path d="M54 41 L65 44 L61 80 L47 83 L50 58 Z" fill="#253c6b"/>
+    <!-- Blue tunic, narrow side profile. -->
+    <path d="M55 42 L67 41 L74 50 L74 66 L70 77 L72 86 L52 86 L53 72 L52 56 Z" fill="#2466a0"/>
+    <path d="M55 69 L73 69 L72 75 L54 75 Z" fill="#805334"/>
+    <rect x="69" y="70" width="4" height="4" fill="#dfb84d"/>
+    <!-- Near leg and forward-facing boot. -->
+    <path d="M63 84 L72 84 L72 101 L74 106 L84 109 L84 113 L65 113 L63 106 Z" fill="#805334"/>
+    <path d="M63 84 L72 84 L72 99 L64 99 Z" fill="#39465a"/>
+    <!-- Neck and side-facing helmet with visor/nose projecting to the right. -->
+    <path d="M60 37 L60 44 L69 46 L71 36 Z" fill="#aab8c8"/>
+    <path d="M55 34 L55 25 Q56 17 65 17 Q75 17 77 26 L77 29 L82 32 L78 35 L78 40 L67 42 L57 38 Z" fill="#b7c6d7"/>
+    <path d="M55 26 Q65 22 77 26" fill="none"/>
+    <path d="M70 29 L78 29 L78 32 L71 32 Z" fill="#243047" stroke="none"/>
+    <path d="M72 35 L77 35 M72 38 L76 38" fill="none" stroke-width="1"/>
+    <!-- One visible shoulder and arm. -->
+    <path d="M58 45 Q66 43 69 51 L68 57 L57 55 Z" fill="#b7c6d7"/>
+    <path d="M61 55 L67 56 L69 65 L79 70 L77 76 L63 70 L59 62 Z" fill="#2466a0"/>
+    <path d="M74 68 L80 71 L78 77 L72 74 Z" fill="#b7c6d7"/>
+    <path d="M79 71 L85 72 L85 78 L78 78 Z" fill="#805334"/>
+    <!-- Single short sword, separate from the body and without a ground shadow. -->
+    <path d="M83 69 L86 69 L86 81 L83 81 Z" fill="#805334"/>
+    <path d="M79 80 L90 80 L90 83 L79 83 Z" fill="#dfb84d"/>
+    <path d="M83 83 L87 83 L87 103 L85 108 L83 103 Z" fill="#d5e3ef"/>
+  </g>
+</svg>

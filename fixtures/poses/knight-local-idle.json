@@ -1,0 +1,15 @@
+{
+  "character": "knight-side-v1",
+  "referenceSha256": "b8348ccec841a3f9d5a8194ce0e2bd60e9428ba2b363759de724b8735ac81fb9",
+  "method": "procedural_local_row_deformation",
+  "regions": [
+    { "name": "shoulder", "left": 27, "top": 25, "width": 7, "height": 7 },
+    { "name": "chest", "left": 25, "top": 32, "width": 4, "height": 4 }
+  ],
+  "frames": [
+    { "name": "rest", "rise": [0, 0], "durationMs": 350 },
+    { "name": "inhale", "rise": [1, 0], "durationMs": 200 },
+    { "name": "hold", "rise": [1, 1], "durationMs": 350 },
+    { "name": "exhale", "rise": [1, 0], "durationMs": 200 }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "filename": "control-lora-canny-rank128.safetensors",
+  "url": "https://huggingface.co/stabilityai/control-lora/resolve/main/control-LoRAs-rank128/control-lora-canny-rank128.safetensors",
+  "bytes": 395733680,
+  "sha256": "56389dbb245ca44de91d662529bd4298abc55ce2318f60bc19454fb72ff68247",
+  "source": "https://huggingface.co/stabilityai/control-lora",
+  "architecture": "SDXL Control-LoRA Canny rank128",
+  "licenseReview": "See model repository terms; commercial deployment review is not complete.",
+  "verifiedAt": "2026-09-23"
+}

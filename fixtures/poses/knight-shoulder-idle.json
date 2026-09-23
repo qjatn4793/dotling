@@ -1,0 +1,14 @@
+{
+  "character": "knight-side-v1",
+  "referenceSha256": "b8348ccec841a3f9d5a8194ce0e2bd60e9428ba2b363759de724b8735ac81fb9",
+  "method": "procedural_shoulder_silhouette",
+  "regions": [{ "name": "shoulder-envelope", "left": 24, "top": 24, "width": 12, "height": 8 }],
+  "anchorX": 29,
+  "seamRows": [23, 31, 32],
+  "frames": [
+    { "name": "rest", "rows": [], "durationMs": 350 },
+    { "name": "inhale", "rows": [{"y":27,"rise":0,"expand":1},{"y":28,"rise":0,"expand":1}], "durationMs": 200 },
+    { "name": "hold", "rows": [{"y":24,"rise":1,"expand":0},{"y":25,"rise":1,"expand":0},{"y":26,"rise":1,"expand":1},{"y":27,"rise":1,"expand":1},{"y":28,"rise":1,"expand":1},{"y":29,"rise":0,"expand":1}], "durationMs": 350 },
+    { "name": "exhale", "rows": [{"y":27,"rise":0,"expand":1},{"y":28,"rise":0,"expand":1}], "durationMs": 200 }
+  ]
+}

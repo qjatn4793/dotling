@@ -1,8 +1,9 @@
-import { removeBackground } from "@imgly/background-removal-node";
 import sharp from "sharp";
 
 export async function removeBg(inputBuffer: Buffer): Promise<Buffer> {
-  const blob = new Blob([new Uint8Array(inputBuffer)]);
+  const { removeBackground } = await import("@imgly/background-removal-node");
+  const png = await sharp(inputBuffer).png().toBuffer();
+  const blob = new Blob([new Uint8Array(png)], { type: "image/png" });
   const resultBlob = await removeBackground(blob);
   const arrayBuffer = await resultBlob.arrayBuffer();
   return Buffer.from(arrayBuffer as ArrayBuffer);
